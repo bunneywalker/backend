@@ -1,9 +1,8 @@
-from databases import Database
-import sqlalchemy
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
 
-DATABASE_URL = "sqlite:///./todo.db"
+SQLALCHEMY_DATABASE_URL = "sqlite:///./test.db"
 
-database = Database(DATABASE_URL)
-metadata = sqlalchemy.MetaData()
+engine = create_engine(SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False})
 
-engine = sqlalchemy.create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)

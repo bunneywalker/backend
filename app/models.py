@@ -1,10 +1,10 @@
-import sqlalchemy
-from .database import metadata
+from sqlalchemy import Column, Integer, String, Boolean
+from sqlalchemy.ext.declarative import declarative_base
 
-tasks = sqlalchemy.Table(
-    "tasks",
-    metadata,
-    sqlalchemy.Column("id", sqlalchemy.Integer, primary_key=True),
-    sqlalchemy.Column("title", sqlalchemy.String, nullable=False),
-    sqlalchemy.Column("completed", sqlalchemy.Boolean, default=False),
-)
+Base = declarative_base()
+
+class Task(Base):
+    __tablename__ = "tasks"
+    id = Column(Integer, primary_key=True, index=True)
+    title = Column(String, index=True)
+    completed = Column(Boolean, default=False)
