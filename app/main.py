@@ -1,45 +1,43 @@
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+from typing import List
 from app import models, schemas, crud, database
-import uvicorn
 
 app = FastAPI()
 
-models.metadata.create_all(database.engine)
+origins = [
+    "*"
+]
 
-@app.on_event("startup")
-async def startup():
-    await database.database.connect()
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
-@app.on_event("shutdown")
-async def shutdown():
-    await database.database.disconnect()
 
-@app.get("/tasks/", response_model=list[schemas.Task])
-async def read_tasks():
+models.Base.metadata.create_all(bind=database.engine)
+
+@app.get("/tasks", response_model=List[schemas.Task])
+async def get_tasks():
     return await crud.get_tasks()
 
-@app.get("/tasks/{task_id}", response_model=schemas.Task)
-async def read_task(task_id: int):
-    task = await crud.get_task(task_id)
-    if not task:
-        raise HTTPException(status_code=404, detail="Task not found")
-    return task
-
-@app.post("/tasks/", response_model=schemas.Task)
+@app.post("/tasks", response_model=schemas.Task)
 async def create_task(task: schemas.TaskCreate):
     return await crud.create_task(task)
 
 @app.put("/tasks/{task_id}", response_model=schemas.Task)
-async def update_task(task_id: int, task: schemas.TaskCreate):
-    db_task = await crud.get_task(task_id)
-    if not db_task:
+async def update_task(task_id: int, task: schemas.TaskUpdate):
+    updated_task = await crud.update_task(task_id, task)
+    if not updated_task:
         raise HTTPException(status_code=404, detail="Task not found")
-    return await crud.update_task(task_id, task)
+    return updated_task
 
 @app.delete("/tasks/{task_id}")
 async def delete_task(task_id: int):
-    await crud.delete_task(task_id)
-    return {"message": "Task deleted"}
-
-if __name__ == "__main__":
-    uvicorn.run("app.main:app", host="0.0.0.0", port=8000, reload=True)
+    success = await crud.delete_task(task_id)
+    if not success:
+        raise HTTPException(status_code=404, detail="Task not found")
+    return {"detail": "Task deleted"}
